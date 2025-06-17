@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Study Note Portal</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+      color: #222;
+    }
+    header {
+      padding: 20px;
+      background-color: #10a37f;
+      color: white;
+      text-align: center;
+      font-size: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header button {
+      background: white;
+      color: #10a37f;
+      border: none;
+      font-weight: bold;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .search-container, .upload-container {
+      padding: 15px;
+      background-color: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      margin: 10px;
+      border-radius: 8px;
+    }
+    input[type="text"], input[type="url"], input[type="file"], textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #10a37f;
+      border: none;
+      color: white;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .note-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding: 20px;
+    }
+    .note {
+      background: white;
+      width: 280px;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: box-shadow 0.2s ease;
+    }
+    .note:hover {
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+    .note img {
+      width: 100%;
+      height: 160px;
+      object-fit: cover;
+    }
+    .note-info {
+      padding: 12px;
+    }
+    .note-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    .note-location {
+      color: #666;
+      font-size: 14px;
+    }
+    .modal-bg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .modal-bg.active {
+      display: flex;
+    }
+    .modal-content {
+      background: white;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    .modal-img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .modal-title {
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .modal-location {
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .modal-description {
+      margin-bottom: 15px;
+    }
+    .modal-link {
+      display: inline-block;
+      background: #10a37f;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    📚 Study Note Portal
+    <button onclick="logout()">Log Out</button>
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search by title or school..." oninput="filterNotes()" />
+  </div>
+
+  <div class="upload-container">
+    <h3>Upload Your Note</h3>
+    <input type="text" id="titleInput" placeholder="Note Title" />
+    <input type="text" id="locationInput" placeholder="School Location" />
+    <textarea id="descInput" rows="3" placeholder="Short description..."></textarea>
+    <input type="url" id="linkInput" placeholder="Link to your note (Google Drive, Dropbox, etc.)" />
+    <input type="file" id="imgInput" accept="image/*" />
+    <button onclick="uploadNote()">Upload</button>
+  </div>
+
+  <div class="note-list" id="noteList"></div>
+
+  <div class="modal-bg" id="modalBg">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal()">&times;</span>
+      <img id="modalImg" class="modal-img" />
+      <div class="modal-title" id="modalTitle"></div>
+      <div class="modal-location" id="modalLocation"></div>
+      <div class="modal-description" id="modalDesc"></div>
+      <a id="modalLink" href="#" target="_blank" class="modal-link">View/Download</a>
+    </div>
+  </div>
+
+  <script>
+    if (!localStorage.getItem("user")) {
+      window.location.href = "index.html";
+    }
+
+    let notes = [];
+
+    function renderNotes(filter = "") {
+      const noteList = document.getElementById("noteList");
+      noteList.innerHTML = "";
+      const filtered = notes.filter(n =>
+        (n.title + n.location + n.description).toLowerCase().includes(filter.toLowerCase())
+      );
+      filtered.forEach((note, i) => {
+        const div = document.createElement("div");
+        div.className = "note";
+        div.innerHTML = \`
+          <img src="\${note.image}" alt="Note Image" />
+          <div class="note-info">
+            <div class="note-title">\${note.title}</div>
+            <div class="note-location">\${note.location}</div>
+          </div>
+        \`;
+        div.onclick = () => openModal(i);
+        noteList.appendChild(div);
+      });
+    }
+
+    function filterNotes() {
+      const query = document.getElementById("searchInput").value;
+      renderNotes(query);
+    }
+
+    function uploadNote() {
+      const title = document.getElementById("titleInput").value.trim();
+      const location = document.getElementById("locationInput").value.trim();
+      const description = document.getElementById("descInput").value.trim();
+      const link = document.getElementById("linkInput").value.trim();
+      const fileInput = document.getElementById("imgInput");
+      const file = fileInput.files[0];
+
+      if (!title || !location || !link || !file) {
+        alert("Please fill in all fields and select an image.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        notes.push({
+          title,
+          location,
+          description,
+          link,
+          image: e.target.result
+        });
+        renderNotes();
+        document.getElementById("titleInput").value = "";
+        document.getElementById("locationInput").value = "";
+        document.getElementById("descInput").value = "";
+        document.getElementById("linkInput").value = "";
+        fileInput.value = "";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function openModal(index) {
+      const note = notes[index];
+      document.getElementById("modalTitle").textContent = note.title;
+      document.getElementById("modalLocation").textContent = note.location;
+      document.getElementById("modalDesc").textContent = note.description;
+      document.getElementById("modalLink").href = note.link;
+      document.getElementById("modalImg").src = note.image;
+      document.getElementById("modalBg").classList.add("active");
+    }
+
+    function closeModal() {
+      document.getElementById("modalBg").classList.remove("active");
+    }
+
+    function logout() {
+      localStorage.removeItem("user");
+      window.location.href = "index.html";
+    }
+
+    renderNotes();
+  </script>
+</body>
+</html>
