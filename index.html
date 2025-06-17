@@ -1,1 +1,128 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Study Note Finder</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 0;
+      color: #222;
+    }
+
+    header {
+      padding: 20px;
+      background-color: #10a37f;
+      color: white;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    .search-container {
+      padding: 10px;
+      background-color: white;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .search-container input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    .note-list {
+      padding: 20px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .note {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    .note-title {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .note-location {
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    📝 Study Note Finder
+  </header>
+
+  <div class="search-container">
+    <input type="text" id="searchInput" placeholder="Search by title or school..." oninput="filterNotes()" />
+  </div>
+
+  <div class="note-list" id="noteList">
+    <!-- Notes will be inserted here by JS -->
+  </div>
+
+  <script>
+    const notes = [
+      { title: "Biology - Cell Structure Summary", location: "Sydney High School" },
+      { title: "Year 10 History Revision", location: "Melbourne Grammar" },
+      { title: "Maths Practice - Trigonometry", location: "Brisbane State College" },
+      { title: "English Essay - Macbeth", location: "Perth Modern School" },
+      { title: "Chemistry - Acids & Bases", location: "Adelaide High" },
+      { title: "Legal Studies Notes", location: "Sydney High School" },
+      { title: "Physics Formula Sheet", location: "Melbourne Grammar" },
+    ];
+
+    const noteList = document.getElementById('noteList');
+
+    function renderNotes(filter = "") {
+      noteList.innerHTML = "";
+
+      const filtered = notes.filter(note => {
+        const combined = (note.title + note.location).toLowerCase();
+        return combined.includes(filter.toLowerCase());
+      });
+
+      if (filtered.length === 0) {
+        noteList.innerHTML = "<p>No notes found.</p>";
+        return;
+      }
+
+      filtered.forEach(note => {
+        const noteEl = document.createElement("div");
+        noteEl.className = "note";
+        noteEl.innerHTML = `
+          <div class="note-title">${note.title}</div>
+          <div class="note-location">${note.location}</div>
+        `;
+        noteList.appendChild(noteEl);
+      });
+    }
+
+    function filterNotes() {
+      const search = document.getElementById("searchInput").value;
+      renderNotes(search);
+    }
+
+    // Initial render
+    renderNotes();
+  </script>
+
+</body>
+</html>
